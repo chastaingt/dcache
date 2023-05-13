@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/anthdm/ggcache/proto"
+	"github.com/chastaingt/dcache/proto"
 )
 
 type Options struct{}
