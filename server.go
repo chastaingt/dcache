@@ -7,23 +7,18 @@ import (
 	"io"
 	"log"
 	"net"
-	"os"
 	"time"
 
 	"github.com/chastaingt/dcache/cache"
 	"github.com/chastaingt/dcache/client"
 	"github.com/chastaingt/dcache/proto"
-	"github.com/hashicorp/raft"
 	"go.uber.org/zap"
 )
 
 type ServerOpts struct {
-	ListenAddr  string
-	IsLeader    bool
-	LeaderAddr  string
-	RaftAdr     string
-	RaftNodes   []string
-	LocalRaftId string
+	ListenAddr string
+	IsLeader   bool
+	LeaderAddr string
 }
 
 type Server struct {
@@ -45,40 +40,6 @@ func NewServer(opts ServerOpts, c cache.Cacher) *Server {
 }
 
 func (s *Server) Start() error {
-	var (
-		cfg           = raft.DefaultConfig()
-		fsm           = &raft.MockFSM{}
-		logStore      = raft.NewInmemStore()
-		stableStore   = raft.NewInmemStore()
-		snapShotStore = raft.NewInmemSnapshotStore()
-		timeout       = time.Second * 5
-	)
-
-	cfg.LocalID = raft.ServerID(s.ServerOpts.LocalRaftId)
-
-	tr, err := raft.NewTCPTransport("127.0.0.1:4000", nil, 10, timeout, os.Stdout)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	server := raft.Server{
-		Suffrage: raft.Voter,
-		ID:       raft.ServerID(cfg.LocalID),
-		Address:  raft.ServerAddress("127.0.0.1:4000"),
-	}
-
-	serverConfig := raft.Configuration{
-		Servers: []raft.Server{server},
-	}
-	r, err := raft.NewRaft(cfg, fsm, stableStore, logStore, snapShotStore, tr)
-	if err != nil {
-		log.Fatal("Failed to create new raft", err)
-	}
-
-	if err := r.BootstrapCluster(serverConfig).Error(); err != nil {
-		log.Fatal("Failed to Boostrap cluster", err)
-	}
-	fmt.Printf("%+v\n", r)
 
 	ln, err := net.Listen("tcp", s.ListenAddr)
 	if err != nil {
